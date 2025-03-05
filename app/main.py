@@ -12,9 +12,6 @@ from datetime import datetime
 
 from psycopg2 import sql
 
-
-
-
 app = FastAPI()
 
 
