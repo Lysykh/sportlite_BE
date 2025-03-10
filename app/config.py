@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_DB: str
 #TODO дописать переменную модел кофиг так так чтобы путь к env был в явном виде
+#TODO попробовать слить несколько веток (перед этим закоммитеть) посмотреть эффекты 
 
 # POSTGRES_PASSWORD=123
 # POSTGRES_USER=oleg
@@ -20,5 +21,3 @@ settings = Settings()
 if __name__ == "__main__":
     print(settings)
 
-
-мы на алхимии
