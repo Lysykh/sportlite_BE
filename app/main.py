@@ -14,12 +14,12 @@ from psycopg2 import sql
 from app.config import settings
 from app.schemas import Item
 
-# На ветке HomeWork2 делаю вот такой коммент которого на других ветках нет.
+# На ветке HomeWork делаю вот такой коммент которого на других ветках нет.
 
 app = FastAPI()
 
 
-# первая функция которая выводит нашу надпись (а здесь в ветке homeWork2 изменяю комментарий так чтобы он конфликтовал с HomeWork2)
+# первая функция которая выводит нашу надпись (а здесь в ветке homeWork изменяю комментарий так чтобы он конфликтовал с HomeWork2)
 
 @app.get("/")
 async def root():
