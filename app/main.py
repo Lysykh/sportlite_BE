@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Request, Form
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Form
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi.staticfiles import StaticFiles
@@ -11,37 +11,132 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from psycopg2 import sql
+from sqlalchemy import select
 from app.config import settings
+from app.models import ItemCreate
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db import get_db
+# from app.schemas import ItemCreate  
 from app.schemas import Item
 
-# На ветке HomeWork делаю вот такой коммент которого на других ветках нет.
+from app.crud import isert_item
 
 app = FastAPI()
 
+test = 1+1
+print(test)
 
-# первая функция которая выводит нашу надпись (а здесь в ветке homeWork изменяю комментарий так чтобы он конфликтовал с HomeWork2)
-
+   
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    count = 0
+    test2=[]
+    while count < 10:   
+        test = 1+2
+        spisok = {
+                    'training_dif': count,
+                    'training_number': count,
+                }
+        test2.append(spisok)
+        count = count + 1
+    return {"message": "Hello World", test:"some", "test2":test2}
+    
+   
+
+
+# Для обьяснения  может попробуем заменить ITEM на прямой код, как тогда будет выглядеть наш код?
+# давай выедем returne на экран компа на основную страницу
+@app.post("/create/")
+async def create_item_handler(item: Item, session: AsyncSession = Depends(get_db)):
+    new_item = await isert_item(item, session)
+    return new_item
+
+@app.get("/get-items/")
+async def get_items(session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate))
+    zabiraemizkursora = result.scalars().first()
+    return zabiraemizkursora
+
+@app.get("/get-programm/")
+async def get_items(session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate))
+    zabiraemizkursora = result.scalars().first()
+    return zabiraemizkursora
+
+# почему мы тут не пользуемся shemas? здесь что не нужен пайдентик?
+@app.get("/get-items/{item_id}")
+async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
+    item = result.scalars().first()
+    return item
+
+
+
+# AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
+@app.get("/get-items pydentic/", response_model=Item)
+async def get_item2(item_id: int, session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
+    item = result.scalars().first()
+    return item
+
+# AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
+@app.get("/")
+async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate).where(ItemCreate.id == 2))
+    item = result.scalars().first()
+    return item
+
+# @app.post("/items/", response_model=ItemResponse)
+# async def create_item_handler(item: ItemCreate, session: AsyncSession = Depends(get_db)):
+#     new_item = Item(name=item.name, age=item.age)  # Используйте SQLAlchemy модель
+#     session.add(new_item)
+#     await session.commit()
+#     await session.refresh(new_item)
+#     return new_item  # FastAPI автоматически сериализует new_item в ItemResponse
 
 # коннектор к базе данных/ не понятно зачем я его делаю тут отдельно так как потом все время его дублирую в каждой функции так как переменная все равно работает только внутри фенкции и вообще не понятно как Ювикорн обрабатывапет код питона
 
-conn = psycopg2.connect(
-    dbname="comments",
-    user="oleg",
-    password = settings.POSTGRES_PASSWORD,
-    host="db",
-    port=5432,
-)
+# conn = psycopg2.connect(
+#     dbname="comments",
+#     user="oleg",
+#     password = settings.POSTGRES_PASSWORD,
+#     host="db",
+#     port=5432,
+# )
+
+# cur = conn.cursor(cursor_factory=RealDictCursor)
+
+
+# ДОМАШНЯЯ РАБОТА "СОЗДАНИЕ ТАБЛИЦЫ"
+# Создаю функцию создания таблицы. Не понял где тут нужен класс. Точнее так как этот класс сюда присобавить. 
+# Просто создал табличу с теми же полями/
+
+# def create_items_table():
+#     create_table_query = """
+#     CREATE TABLE IF NOT EXISTS items (
+#         id SERIAL PRIMARY KEY,
+#         name VARCHAR(255) NOT NULL,
+#         age INT NOT NULL
+#     );
+#     """
+#     cur.execute(create_table_query)
+#     conn.commit()
+#     cur.close()
+#     conn.close()
+#     print("Таблица 'items' создана или уже существует.")
+
+# # Создание таблицы при запуске приложения
+# # Не понятно почему он его зачеркивает этот OnEvent
+# @app.on_event("startup")
+# def startup_event():
+#     create_items_table()
 
 
 
-cur = conn.cursor(cursor_factory=RealDictCursor)
-
-# ==========
-# # ДОМАШНЯЯ РАБОТА ИЗМЕНЕНИЕ ПОЛЬЗОВАТЕЛЯ
-# # 3) Метод изменяющий пользователя пользователтя (PUT). 
+# # ==========
+# # # ДОМАШНЯЯ РАБОТА ИЗМЕНЕНИЕ ПОЛЬЗОВАТЕЛЯ
+# # # 3) Метод изменяющий пользователя пользователтя (PUT). 
 # @app.put("/zamena/{item_id}")
 # async def update_item(
 #     item_id: Annotated[int, Path(title="The ID of the item to get", ge=0, le=1000)],
@@ -56,164 +151,166 @@ cur = conn.cursor(cursor_factory=RealDictCursor)
 #     return results
 
 
-class Item(BaseModel):
-    name: str
-    age: int
-@app.put("/zamena/{item_id}")
-def update_user(item_id: int, item: Item):
-    # item.name = 'oleg'
-    # item.age = 1
-    cur.execute("UPDATE users SET name = %s, age = %s WHERE id = %s",(item.name, item.age, item_id))
-    # response = cur.fetchone()
-    # print(response)
-    conn.commit()
-    return {"message": f"Пользователь с ID {item_id} был успешно обновлен."}  
-
-# ===== КОНЕЦ ДОМАШНЕЦ РАБОТЫ 
-
-# ДОМАШЕНЕЕ ЗАДАНИЕ DELETE 
+# # class Item(BaseModel):
+# #     name: str
+# #     age: int
+# # @app.put("/zamena/{item_id}")
+# # def update_user(item_id: int, item: Item):
+# #     # item.name = 'oleg'
+# #     # item.age = 1
+# #     cur.execute("UPDATE users SET name = %s, age = %s WHERE id = %s",(item.name, item.age, item_id))
+# #     # response = cur.fetchone()
+# #     # print(response)
+# #     conn.commit()
+# #     return {"message": f"Пользователь с ID {item_id} был успешно обновлен."}  
 
 
 
-@app.delete("/delete_user/{item_id}")
-def delete_user(item_id: int):
+# # ===== КОНЕЦ ДОМАШНЕЦ РАБОТЫ 
 
-    cur.execute("DELETE FROM users WHERE id = %s", (item_id,))
-    conn.commit()  
-    return {"message": f"Пользователь с ID {item_id} был успешно удалён.",
-            'response': response}
-
-
-# КОНЕЦ ДОМАШНЕГО ЗАДАНИЯ DELETE
-
-
-# === ДОМАШНЕЕ ЗАДАНИЕ №1 ===
-# Выводит из базы данных пользователя по ID (fetchAll или fetchOne) #TODO:
-
-
-@app.get("/take_user/{item_id}")
-async def read_item(item_id: int):
-    # async def read_item(item_id): - можно было и так написать, но int - типизирует данные и говорит что это обязательно число. Дима сказал что это неебаться как важно! 
-    """Данная ручка возвращает данные пользователяв виде {
-    "id": 2,
-    "name": "John",
-    "age": 3,
-    "created_at": "2025-02-01T15:39:42.216806"
-    }"""
-    cur.execute("SELECT * FROM users WHERE id = %s", (item_id,))
-    rows = cur.fetchone()
-    return rows
-
-
-# === ДОМАШНЕЕ ЗАДАНИЕ №2 ===
-# Засовывает в базу данных пользователя методом POST
-
-# Модель данных для POST-запроса
-class Item(BaseModel):
-    name: str
-    age: int
-@app.post("/insert/")
-async def create_item(item: Item):
-    # item.name='oleg'
-    # item.age=32
-    # print(item)
-    cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)",(item.name, item.age),)
-    # Сохраняем изменения
-    conn.commit()
-    return {"message": "Данные успешно добавлены", "item": item}
+# # ДОМАШЕНЕЕ ЗАДАНИЕ DELETE 
 
 
 
+# # @app.delete("/delete_user/{item_id}")
+# # def delete_user(item_id: int):
+
+# #     cur.execute("DELETE FROM users WHERE id = %s", (item_id,))
+# #     conn.commit()  
+# #     return {"message": f"Пользователь с ID {item_id} был успешно удалён.",
+# #             'response': response}
 
 
-# # Забирае из базы данных методол GET первого пользователя
-# @app.get("/first-user")
-# async def get_first_user():
-#     with closing(psycopg2.connect(
-#             dbname="comments",
-#             user="oleg",
-#             password="123",
-#             host="localhost",
-#             port=5432,
-#         )) as conn:
-#         with closing(conn.cursor(cursor_factory=RealDictCursor)) as cur:
-#             cur.execute("SELECT * FROM users LIMIT 1")
-#             row = cur.fetchone()
-#             print (row)
+# # КОНЕЦ ДОМАШНЕГО ЗАДАНИЯ DELETE
+
+
+# # === ДОМАШНЕЕ ЗАДАНИЕ №1 ===
+# # Выводит из базы данных пользователя по ID (fetchAll или fetchOne) #TODO:
+
+
+# # @app.get("/take_user/{item_id}")
+# # async def read_item(item_id: int):
+# #     # async def read_item(item_id): - можно было и так написать, но int - типизирует данные и говорит что это обязательно число. Дима сказал что это неебаться как важно! 
+# #     """Данная ручка возвращает данные пользователяв виде {
+# #     "id": 2,
+# #     "name": "John",
+# #     "age": 3,
+# #     "created_at": "2025-02-01T15:39:42.216806"
+# #     }"""
+# #     cur.execute("SELECT * FROM users WHERE id = %s", (item_id,))
+# #     rows = cur.fetchone()
+# #     return rows
+
+
+# # === ДОМАШНЕЕ ЗАДАНИЕ №2 ===
+# # Засовывает в базу данных пользователя методом POST
+
+# # Модель данных для POST-запроса
+# # class Item(BaseModel):
+# #     name: str
+# #     age: int
+# # @app.post("/insert/")
+# # async def create_item(item: Item):
+# #     # item.name='oleg'
+# #     # item.age=32
+# #     # print(item)
+# #     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)",(item.name, item.age),)
+# #     # Сохраняем изменения
+# #     conn.commit()
+# #     return {"message": "Данные успешно добавлены", "item": item}
+
+
+
+
+
+# # # Забирае из базы данных методол GET первого пользователя
+# # @app.get("/first-user")
+# # async def get_first_user():
+# #     with closing(psycopg2.connect(
+# #             dbname="comments",
+# #             user="oleg",
+# #             password="123",
+# #             host="localhost",
+# #             port=5432,
+# #         )) as conn:
+# #         with closing(conn.cursor(cursor_factory=RealDictCursor)) as cur:
+# #             cur.execute("SELECT * FROM users LIMIT 1")
+# #             row = cur.fetchone()
+# #             print (row)
     
-#     if row:
-#         return {"user": row}
+# #     if row:
+# #         return {"user": row}
         
-#     else:
-#         return {"message": "No users found in the database."}
+# #     else:
+# #         return {"message": "No users found in the database."}
 
 
 
 
-# # Засовывает пользователя в азу данных из формы
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-# @app.post("/post_insert_form")
-# async def create_user(request: Request):
-#     form_data = await request.form()
-#     name = form_data.get('name')
-#     age = form_data.get('age')
+# # # Засовывает пользователя в азу данных из формы
+# # app.mount("/static", StaticFiles(directory="static"), name="static")
+# # @app.post("/post_insert_form")
+# # async def create_user(request: Request):
+# #     form_data = await request.form()
+# #     name = form_data.get('name')
+# #     age = form_data.get('age')
     
-#     # Запись данных в таблицу
-#     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
-#     conn.commit()
+# #     # Запись данных в таблицу
+# #     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
+# #     conn.commit()
     
-#     return {"message": f"User {name} with age {age} was successfully added."}
-# # ==КОНЕЦ работающий код для вставки из формы
+# #     return {"message": f"User {name} with age {age} was successfully added."}
+# # # ==КОНЕЦ работающий код для вставки из формы
  
 
-# # === НАЧАЛО Работающая часть кода, которая позволяет занести в базу данных значения из браузерной строки по методу GET===
-# @app.get("/user")
-# async def create_user(name: str = Query(...), age: int = Query(...)):
-#     # Запись данных в таблицу
-#     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
-#     conn.commit()
+# # # === НАЧАЛО Работающая часть кода, которая позволяет занести в базу данных значения из браузерной строки по методу GET===
+# # @app.get("/user")
+# # async def create_user(name: str = Query(...), age: int = Query(...)):
+# #     # Запись данных в таблицу
+# #     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
+# #     conn.commit()
     
-#     retue": f"User {name} with age {age} was successfully added."}rn {"messag
-# # === КОНЕЦ Работающая часть кода, которая позволяет занести в базу данных значения из браузерной строки по методу GET===
+# #     retue": f"User {name} with age {age} was successfully added."}rn {"messag
+# # # === КОНЕЦ Работающая часть кода, которая позволяет занести в базу данных значения из браузерной строки по методу GET===
 
 
-# @app.post("/user")
-# async def create_user(name: str = Form(...), age: int = Form(...)):
-#     # Запись данных в таблицу
-#     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
-#     conn.commit()
+# # @app.post("/user")
+# # async def create_user(name: str = Form(...), age: int = Form(...)):
+# #     # Запись данных в таблицу
+# #     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
+# #     conn.commit()
     
-#     return {"message": f"User {name} with age {age} was successfully added."}
+# #     return {"message": f"User {name} with age {age} was successfully added."}
 
 
 
 
-# from pydantic import BaseModel
+# # from pydantic import BaseModel
 
 
-# class Item(BaseModel):
-#     name: str
-#     age: int
+# # class Item(BaseModel):
+# #     name: str
+# #     age: int
 
 
-# @app.post("/user")
-# def create_user_from_form(user:Item):
-#     print(user.age)
-#     return user
+# # @app.post("/user")
+# # def create_user_from_form(user:Item):
+# #     print(user.age)
+# #     return user
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+# # if __name__ == "__main__":
+# #     import uvicorn
+# #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-   # модифицирую код за счет задания значений функции внутри кода
+#    # модифицирую код за счет задания значений функции внутри кода
 
-# @app.get("/user")
-# def create_user(name, age):
-#     # Запись данных в таблицу
-#     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
-#     conn.commit()
+# # @app.get("/user")
+# # def create_user(name, age):
+# #     # Запись данных в таблицу
+# #     cur.execute("INSERT INTO users (name, age) VALUES (%s, %s)", (name, age))
+# #     conn.commit()
     
-#     return {"message": f"User {name} with age {age} was successfully added."}
+# #     return {"message": f"User {name} with age {age} was successfully added."}
 
-# inDB=create_user('test23', 1111)
+# # inDB=create_user('test23', 1111)
