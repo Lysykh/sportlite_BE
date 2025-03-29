@@ -1,4 +1,4 @@
-from distance import sorted_plan, train
+from eggs.distance import sorted_plan, train
 
 programm_run = train('run', 'pano', 5, 30) 
 programm_bike = train('bike', 'pano', 5, 30) 

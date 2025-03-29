@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Form
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -5,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from contextlib import closing
+from contextlib import asynccontextmanager, closing
 
 from pydantic import BaseModel
 from datetime import datetime
@@ -13,20 +14,36 @@ from datetime import datetime
 from psycopg2 import sql
 from sqlalchemy import select
 from app.config import settings
-from app.models import ItemCreate
+from app.models import ItemCreate, New_user, Workout
+from app import models
+
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db import get_db
+from app.db import create_tables, get_db
 # from app.schemas import ItemCreate  
-from app.schemas import Item
+from app.schemas import Item, New_user_pydentic_schemas, Workout_pydentic_schemas
 
-from app.crud import isert_item
 
-app = FastAPI()
 
-test = 1+1
-print(test)
+from sqlalchemy.orm import sessionmaker
+from app.db import engine
+from app.crud import isert_item, isert_in_new_user, isert_in_workout 
+from app.crud import add_workout_to_user
 
+from sqlalchemy import insert
+from app.models import user_workout_association
+
+# Эта функция отвечает за запуск задачи по созданию баз даных у момент запуска приложения. Наверно стоит еще проверять что-то вроде "if not exist" 
+
+async def lifespan(app: FastAPI):
+    # Код, выполняемый при запуске приложения
+    await create_tables()
+    yield
+    # Код, выполняемый при завершении работы приложения
+    await engine.dispose()
+
+
+app = FastAPI(lifespan=lifespan) 
    
 @app.get("/")
 async def root():
@@ -42,16 +59,36 @@ async def root():
         count = count + 1
     return {"message": "Hello World", test:"some", "test2":test2}
     
-   
+
+# СВЯЗЬ ТАБЛИЦ
+@app.post("/users/{user_id}/add-workout/{workout_id}")
+async def add_workout_to_user_handler(
+    user_id: int,
+    workout_id: int,
+    session: AsyncSession = Depends(get_db)
+):
+    return await add_workout_to_user(user_id, workout_id, session)
+
+# === домашнее задание по связи БД ===
+# Создаем 2 базы данных 
 
 
-# Для обьяснения  может попробуем заменить ITEM на прямой код, как тогда будет выглядеть наш код?
-# давай выедем returne на экран компа на основную страницу
 @app.post("/create/")
 async def create_item_handler(item: Item, session: AsyncSession = Depends(get_db)):
     new_item = await isert_item(item, session)
     return new_item
 
+@app.post("/create_new_user/")
+async def create_new_user(item: New_user_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+    new_item = await isert_in_new_user(item, session)
+    return new_item
+
+@app.post("/create_workout/")
+async def create_item_handler(item: Workout_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+    new_item = await isert_in_workout(item, session)
+    return new_item
+
+#TODO вынести все строчик в crud
 @app.get("/get-items/")
 async def get_items(session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(ItemCreate))
@@ -70,8 +107,6 @@ async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
     item = result.scalars().first()
     return item
-
-
 
 # AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
 @app.get("/get-items pydentic/", response_model=Item)

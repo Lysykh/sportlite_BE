@@ -46,7 +46,7 @@
 
 
 def train(sport, work_type, pano_min, pano_sek):
-    from temp_watt_zone import run_temp, swimm_temp, bike_temp
+    from aggs.temp_watt_zone import run_temp, swimm_temp, bike_temp
     from datetime import timedelta
 
     # Исходное время
