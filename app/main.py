@@ -21,8 +21,8 @@ from app import models
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import create_tables, get_db
 # from app.schemas import ItemCreate  
-from app.schemas import Item, New_user_pydentic_schemas, Workout_pydentic_schemas
-
+from app.schemas import Item, New_user_pydentic_schemas, Workout_pydentic_schemas, Create_user_email_pydentic_schemas
+# добавил функцию
 
 
 from sqlalchemy.orm import sessionmaker
@@ -33,7 +33,16 @@ from app.crud import add_workout_to_user
 from sqlalchemy import insert
 from app.models import user_workout_association
 
+from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+
 # Эта функция отвечает за запуск задачи по созданию баз даных у момент запуска приложения. Наверно стоит еще проверять что-то вроде "if not exist" 
+
+from fastapi import FastAPI
+
 
 async def lifespan(app: FastAPI):
     # Код, выполняемый при запуске приложения
@@ -44,7 +53,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan) 
-   
+
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # React development server
+        "http://localhost:8081",  # React Native development server
+        # Дополнительные адреса при необходимости
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE"],  # Явное перечисление методов
+    allow_headers=["*"],
+    expose_headers=["*"]  # Дополнительно: если нужно разрешить клиенту доступ к кастомным заголовкам
+)
+
 @app.get("/")
 async def root():
     count = 0
@@ -72,28 +97,56 @@ async def add_workout_to_user_handler(
 # === домашнее задание по связи БД ===
 # Создаем 2 базы данных 
 
+# ДЗ 16.05.25
+# 3) В FastAPI создать ручку создающую пользователя (с именем и email) и берущую список пользователей, а так же  конкретного пользователя по id.
+@app.post("/create_user_email/")
+async def create_user_email(item: Create_user_email_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+    new_item = await isert_in_new_user(item, session)
+    return new_item
+
+
+
 
 @app.post("/create/")
 async def create_item_handler(item: Item, session: AsyncSession = Depends(get_db)):
     new_item = await isert_item(item, session)
     return new_item
 
+
+# 27.05.25 - рабочая ручка
 @app.post("/create_new_user/")
 async def create_new_user(item: New_user_pydentic_schemas, session: AsyncSession = Depends(get_db)):
     new_item = await isert_in_new_user(item, session)
     return new_item
+
+
 
 @app.post("/create_workout/")
 async def create_item_handler(item: Workout_pydentic_schemas, session: AsyncSession = Depends(get_db)):
     new_item = await isert_in_workout(item, session)
     return new_item
 
+
+
+# 27.05.25 - рабочая ручка
 #TODO вынести все строчик в crud
-@app.get("/get-items/")
-async def get_items(session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(ItemCreate))
-    zabiraemizkursora = result.scalars().first()
-    return zabiraemizkursora
+# @app.get("/get-items/")
+# async def get_items(session: AsyncSession = Depends(get_db)):
+#     result = await session.execute(select(ItemCreate))
+#     zabiraemizkursora = result.scalars().first()
+#     return zabiraemizkursora
+
+@app.get("/get-items/{item_id}")
+async def get_items(item_id: int, session: AsyncSession = Depends(get_db)):
+    # Берем запись по конкретному ID
+    result = await session.execute(
+        select(ItemCreate).where(ItemCreate.id == item_id)
+    )
+    item = result.scalars().first()
+    return item
+
+
+
 
 @app.get("/get-programm/")
 async def get_items(session: AsyncSession = Depends(get_db)):
@@ -101,12 +154,17 @@ async def get_items(session: AsyncSession = Depends(get_db)):
     zabiraemizkursora = result.scalars().first()
     return zabiraemizkursora
 
+
+
 # почему мы тут не пользуемся shemas? здесь что не нужен пайдентик?
 @app.get("/get-items/{item_id}")
 async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
+    result = await session.execute(select(New_user).where(New_user.id == item_id))
     item = result.scalars().first()
     return item
+
+
+
 
 # AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
 @app.get("/get-items pydentic/", response_model=Item)
@@ -121,6 +179,13 @@ async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(ItemCreate).where(ItemCreate.id == 2))
     item = result.scalars().first()
     return item
+
+
+@app.post("/request_gigachat/")
+async def request_gigachat(item: Create_user_email_pydentic_schemas):
+    
+    new_item = {}
+    return new_item
 
 # @app.post("/items/", response_model=ItemResponse)
 # async def create_item_handler(item: ItemCreate, session: AsyncSession = Depends(get_db)):

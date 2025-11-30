@@ -7,6 +7,15 @@ from sqlalchemy import Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
 
+class NameMail(Base):
+    __tablename__ = "name_mail"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user = Column(String)
+    mail = Column(String)
+
+
+
 class ItemCreate(Base):
     __tablename__ = "items"
 

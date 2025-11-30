@@ -14,6 +14,12 @@ class Workout_pydentic_schemas(BaseModel):
     distance: str 
     time: str    
 
+class Create_user_email_pydentic_schemas(BaseModel):
+    user: str 
+    mail: str    
+
+    
+
 # class ItemCreate(BaseModel):
 #     name: str
 #     age: str
