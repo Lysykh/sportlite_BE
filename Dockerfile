@@ -6,6 +6,9 @@ COPY ./requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
 COPY . .
 
+# Команда запуска
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]
+
 # эта команда позволяет скопировать в app все что лежит в моей папкке (обратить внимание на . .). Посмотреть синтаксис команд в тех материалах которые скинул Дима
 # CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
 # CMD - это команда для докера которая выполняет консольную команду
