@@ -18,6 +18,7 @@ class Create_user_email_pydentic_schemas(BaseModel):
     user: str 
     mail: str    
 
+
     
 
 # class ItemCreate(BaseModel):

@@ -17,6 +17,14 @@ from app.config import settings
 from app.models import ItemCreate, New_user, Workout
 from app import models
 
+# эта хрень для заливки модулей Гагачатушки
+# from gigachat import GigaChat
+# from gigachat.models import Chat, Messages, MessagesRole
+
+from gigachat import GigaChat
+import ssl
+
+
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import create_tables, get_db
@@ -41,7 +49,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Эта функция отвечает за запуск задачи по созданию баз даных у момент запуска приложения. Наверно стоит еще проверять что-то вроде "if not exist" 
 
-from fastapi import FastAPI
+
 
 
 async def lifespan(app: FastAPI):
@@ -54,8 +62,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan) 
 
-
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -136,25 +142,12 @@ async def create_item_handler(item: Workout_pydentic_schemas, session: AsyncSess
 #     zabiraemizkursora = result.scalars().first()
 #     return zabiraemizkursora
 
+# ВОТ ЭТУ РУЧКУ Я ДЕРГАЮ С ФРОНТА
 @app.get("/get-items/{item_id}")
 async def get_items(item_id: int, session: AsyncSession = Depends(get_db)):
-    # Берем запись по конкретному ID
-    result = await session.execute(
-        select(ItemCreate).where(ItemCreate.id == item_id)
-    )
+    result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
     item = result.scalars().first()
     return item
-
-
-
-
-@app.get("/get-programm/")
-async def get_items(session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(ItemCreate))
-    zabiraemizkursora = result.scalars().first()
-    return zabiraemizkursora
-
-
 
 # почему мы тут не пользуемся shemas? здесь что не нужен пайдентик?
 @app.get("/get-items/{item_id}")
@@ -162,6 +155,13 @@ async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(New_user).where(New_user.id == item_id))
     item = result.scalars().first()
     return item
+
+@app.get("/get-programm/")
+async def get_items(session: AsyncSession = Depends(get_db)):
+    result = await session.execute(select(ItemCreate))
+    zabiraemizkursora = result.scalars().first()
+    return zabiraemizkursora
+
 
 
 
@@ -186,6 +186,27 @@ async def request_gigachat(item: Create_user_email_pydentic_schemas):
     
     new_item = {}
     return new_item
+
+# ФУНКЦИЯ КОНТАКТ С ГИГАЧАТОМ
+@app.post("/request_gigachat2/{promt}")
+async def request_gigachat2(promt: str):
+
+    # Создаем кастомный SSL контекст без проверки сертификатов
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    giga = GigaChat(
+        credentials='MWIwYjY4ZjctYmQ1Ny00MDcyLWEzNWMtYzYwNWY4NTNjNjg5OmQ3NDg5ZjczLWJhMzctNDBmMC1hMjc1LTQ2YjUwYTdhYjAwYg==',
+        verify_ssl_certs=False,  # Отключаем проверку SSL
+        ssl_context=ssl_context  # Передаем кастомный SSL контекст
+    )
+
+    response = giga.chat(promt)
+    print(response.choices[0].message.content)
+    answer = response.choices[0].message.content
+
+    return answer
 
 # @app.post("/items/", response_model=ItemResponse)
 # async def create_item_handler(item: ItemCreate, session: AsyncSession = Depends(get_db)):
