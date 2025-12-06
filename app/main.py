@@ -17,21 +17,12 @@ from app.config import settings
 from app.models import ItemCreate, New_user, Workout
 from app import models
 
-# эта хрень для заливки модулей Гагачатушки
-# from gigachat import GigaChat
-# from gigachat.models import Chat, Messages, MessagesRole
-
-from gigachat import GigaChat
 import ssl
-
 
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import create_tables, get_db
-# from app.schemas import ItemCreate  
 from app.schemas import Item, New_user_pydentic_schemas, Workout_pydentic_schemas, Create_user_email_pydentic_schemas
-# добавил функцию
-
 
 from sqlalchemy.orm import sessionmaker
 from app.db import engine
@@ -43,14 +34,6 @@ from app.models import user_workout_association
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-
-# Эта функция отвечает за запуск задачи по созданию баз даных у момент запуска приложения. Наверно стоит еще проверять что-то вроде "if not exist" 
-
-
-
 
 async def lifespan(app: FastAPI):
     # Код, выполняемый при запуске приложения
@@ -59,9 +42,8 @@ async def lifespan(app: FastAPI):
     # Код, выполняемый при завершении работы приложения
     await engine.dispose()
 
-
-app = FastAPI(lifespan=lifespan) 
-
+# ТОЛЬКО ОДИН РАЗ СОЗДАЕМ ПРИЛОЖЕНИЕ!
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,24 +53,24 @@ app.add_middleware(
         # Дополнительные адреса при необходимости
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],  # Явное перечисление методов
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
-    expose_headers=["*"]  # Дополнительно: если нужно разрешить клиенту доступ к кастомным заголовкам
+    expose_headers=["*"]
 )
 
 @app.get("/")
 async def root():
     count = 0
-    test2=[]
+    test2 = []
     while count < 10:   
-        test = 1+2
+        test = 1 + 2
         spisok = {
-                    'training_dif': count,
-                    'training_number': count,
-                }
+            'training_dif': count,
+            'training_number': count,
+        }
         test2.append(spisok)
         count = count + 1
-    return {"message": "Hello World", test:"some", "test2":test2}
+    return {"message": "Hello World", "test": "some", "test2": test2}  
     
 
 # СВЯЗЬ ТАБЛИЦ
@@ -100,113 +82,135 @@ async def add_workout_to_user_handler(
 ):
     return await add_workout_to_user(user_id, workout_id, session)
 
-# === домашнее задание по связи БД ===
-# Создаем 2 базы данных 
-
-# ДЗ 16.05.25
-# 3) В FastAPI создать ручку создающую пользователя (с именем и email) и берущую список пользователей, а так же  конкретного пользователя по id.
 @app.post("/create_user_email/")
-async def create_user_email(item: Create_user_email_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+async def create_user_email(
+    item: Create_user_email_pydentic_schemas, 
+    session: AsyncSession = Depends(get_db)
+):
     new_item = await isert_in_new_user(item, session)
     return new_item
 
-
-
-
 @app.post("/create/")
-async def create_item_handler(item: Item, session: AsyncSession = Depends(get_db)):
+async def create_item_handler(
+    item: Item, 
+    session: AsyncSession = Depends(get_db)
+):
     new_item = await isert_item(item, session)
     return new_item
 
-
-# 27.05.25 - рабочая ручка
 @app.post("/create_new_user/")
-async def create_new_user(item: New_user_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+async def create_new_user(
+    item: New_user_pydentic_schemas, 
+    session: AsyncSession = Depends(get_db)
+):
     new_item = await isert_in_new_user(item, session)
     return new_item
 
 
-
 @app.post("/create_workout/")
-async def create_item_handler(item: Workout_pydentic_schemas, session: AsyncSession = Depends(get_db)):
+async def create_workout_handler(
+    item: Workout_pydentic_schemas, 
+    session: AsyncSession = Depends(get_db)
+):
     new_item = await isert_in_workout(item, session)
     return new_item
 
-
-
-# 27.05.25 - рабочая ручка
-#TODO вынести все строчик в crud
-# @app.get("/get-items/")
-# async def get_items(session: AsyncSession = Depends(get_db)):
-#     result = await session.execute(select(ItemCreate))
-#     zabiraemizkursora = result.scalars().first()
-#     return zabiraemizkursora
-
-# ВОТ ЭТУ РУЧКУ Я ДЕРГАЮ С ФРОНТА
 @app.get("/get-items/{item_id}")
-async def get_items(item_id: int, session: AsyncSession = Depends(get_db)):
+async def get_items(
+    item_id: int, 
+    session: AsyncSession = Depends(get_db)
+):
     result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
     item = result.scalars().first()
     return item
 
-# почему мы тут не пользуемся shemas? здесь что не нужен пайдентик?
-@app.get("/get-items/{item_id}")
-async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(New_user).where(New_user.id == item_id))
+
+@app.get("/get-user/{user_id}")
+async def get_user(
+    user_id: int, 
+    session: AsyncSession = Depends(get_db)
+):
+    result = await session.execute(select(New_user).where(New_user.id == user_id))
     item = result.scalars().first()
     return item
 
+
 @app.get("/get-programm/")
-async def get_items(session: AsyncSession = Depends(get_db)):
+async def get_programm(session: AsyncSession = Depends(get_db)):
     result = await session.execute(select(ItemCreate))
     zabiraemizkursora = result.scalars().first()
     return zabiraemizkursora
 
 
-
-
-
-# AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
-@app.get("/get-items pydentic/", response_model=Item)
-async def get_item2(item_id: int, session: AsyncSession = Depends(get_db)):
+@app.get("/get-items-pydentic/{item_id}", response_model=Item)
+async def get_item2(
+    item_id: int, 
+    session: AsyncSession = Depends(get_db)
+):
     result = await session.execute(select(ItemCreate).where(ItemCreate.id == item_id))
-    item = result.scalars().first()
-    return item
-
-# AI предложил вставить сюда. Проверил ручки, нифига не поменялось... Не могу пнять кроме теоретической поа практическую пользу 
-@app.get("/")
-async def get_item(item_id: int, session: AsyncSession = Depends(get_db)):
-    result = await session.execute(select(ItemCreate).where(ItemCreate.id == 2))
     item = result.scalars().first()
     return item
 
 
 @app.post("/request_gigachat/")
 async def request_gigachat(item: Create_user_email_pydentic_schemas):
-    
     new_item = {}
     return new_item
+
+import logging
+import traceback
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ФУНКЦИЯ КОНТАКТ С ГИГАЧАТОМ
 @app.post("/request_gigachat2/{promt}")
 async def request_gigachat2(promt: str):
+    try:
+        logger.info(f"Получен запрос с промптом: {promt}")
+        
+        # Импортируем внутри функции
+        from gigachat import GigaChat
+        
+        # Создаем кастомный SSL контекст без проверки сертификатов
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
 
-    # Создаем кастомный SSL контекст без проверки сертификатов
-    ssl_context = ssl.create_default_context()
-    ssl_context.check_hostname = False
-    ssl_context.verify_mode = ssl.CERT_NONE
+        logger.info("Создаю клиент GigaChat...")
+        
+        # Инициализируем клиент
+        giga = GigaChat(
+            credentials='MWIwYjY4ZjctYmQ1Ny00MDcyLWEzNWMtYzYwNWY4NTNjNjg5OmJmOWI3YmYyLThmNDAtNDFhMi05ZGI2LTI0ZmVmMTY4ZDY5MA==',
+            verify_ssl_certs=False,
+            ssl_context=ssl_context,
+            timeout=30,  # Добавляем таймаут
+            model="GigaChat"  # Указываем модель
+        )
 
-    giga = GigaChat(
-        credentials='MWIwYjY4ZjctYmQ1Ny00MDcyLWEzNWMtYzYwNWY4NTNjNjg5OmQ3NDg5ZjczLWJhMzctNDBmMC1hMjc1LTQ2YjUwYTdhYjAwYg==',
-        verify_ssl_certs=False,  # Отключаем проверку SSL
-        ssl_context=ssl_context  # Передаем кастомный SSL контекст
-    )
+        logger.info("Отправляю запрос к GigaChat...")
+        
+        # Отправляем запрос
+        response = giga.chat(promt)
+        
+        logger.info("Получен ответ от GigaChat")
+        
+        # Извлекаем ответ
+        answer = response.choices[0].message.content
+        logger.info(f"Ответ: {answer[:100]}...")  # Логируем первые 100 символов
 
-    response = giga.chat(promt)
-    print(response.choices[0].message.content)
-    answer = response.choices[0].message.content
-
-    return answer
+        return {"response": answer}
+        
+    except ImportError as e:
+        error_msg = f"Ошибка импорта GigaChat: {str(e)}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+        
+    except Exception as e:
+        error_msg = f"Ошибка при работе с GigaChat: {str(e)}\n{traceback.format_exc()}"
+        logger.error(error_msg)
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
 
 # @app.post("/items/", response_model=ItemResponse)
 # async def create_item_handler(item: ItemCreate, session: AsyncSession = Depends(get_db)):
