@@ -157,60 +157,26 @@ async def request_gigachat(item: Create_user_email_pydentic_schemas):
     new_item = {}
     return new_item
 
-import logging
-import traceback
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 # ФУНКЦИЯ КОНТАКТ С ГИГАЧАТОМ
 @app.post("/request_gigachat2/{promt}")
 async def request_gigachat2(promt: str):
-    try:
-        logger.info(f"Получен запрос с промптом: {promt}")
-        
-        # Импортируем внутри функции
-        from gigachat import GigaChat
-        
-        # Создаем кастомный SSL контекст без проверки сертификатов
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+    # Создаем кастомный SSL контекст без проверки сертификатов
+    from gigachat import GigaChat
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
 
-        logger.info("Создаю клиент GigaChat...")
-        
-        # Инициализируем клиент
-        giga = GigaChat(
-            credentials='MWIwYjY4ZjctYmQ1Ny00MDcyLWEzNWMtYzYwNWY4NTNjNjg5OmJmOWI3YmYyLThmNDAtNDFhMi05ZGI2LTI0ZmVmMTY4ZDY5MA==',
-            verify_ssl_certs=False,
-            ssl_context=ssl_context,
-            timeout=30,  # Добавляем таймаут
-            model="GigaChat"  # Указываем модель
-        )
+    giga = GigaChat(
+        credentials='MWIwYjY4ZjctYmQ1Ny00MDcyLWEzNWMtYzYwNWY4NTNjNjg5OmJmOWI3YmYyLThmNDAtNDFhMi05ZGI2LTI0ZmVmMTY4ZDY5MA==',
+        verify_ssl_certs=False,
+        ssl_context=ssl_context
+    )
 
-        logger.info("Отправляю запрос к GigaChat...")
-        
-        # Отправляем запрос
-        response = giga.chat(promt)
-        
-        logger.info("Получен ответ от GigaChat")
-        
-        # Извлекаем ответ
-        answer = response.choices[0].message.content
-        logger.info(f"Ответ: {answer[:100]}...")  # Логируем первые 100 символов
+    response = giga.chat(promt)
+    print(response.choices[0].message.content)
+    answer = response.choices[0].message.content
 
-        return {"response": answer}
-        
-    except ImportError as e:
-        error_msg = f"Ошибка импорта GigaChat: {str(e)}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
-        
-    except Exception as e:
-        error_msg = f"Ошибка при работе с GigaChat: {str(e)}\n{traceback.format_exc()}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+    return answer
 
 # @app.post("/items/", response_model=ItemResponse)
 # async def create_item_handler(item: ItemCreate, session: AsyncSession = Depends(get_db)):
