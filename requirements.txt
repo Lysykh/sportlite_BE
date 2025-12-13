@@ -5,4 +5,6 @@ sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 pydantic==2.5.0
 python-multipart==0.0.6
-gigachat==0.2.0
+gigachat>=0.1.43,<0.2
+pydantic-settings==2.* 
+asyncpg
