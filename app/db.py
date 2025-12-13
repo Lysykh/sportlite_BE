@@ -8,7 +8,7 @@ from app.config import settings
 
 # все тут нужно включить из конфига а не вводить хардКодом
 # сделать localhost переменной
-DATABASE_URL = f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@db/{settings.POSTGRES_DB}"
+DATABASE_URL = f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@db/{settings.POSTGRES_DB}" #TODO заменить db на переменную из настроек
 # это то же самое что и conn ектор
 engine = create_async_engine(DATABASE_URL, future=True, echo=True)
 
