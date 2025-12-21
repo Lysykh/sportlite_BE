@@ -9,16 +9,23 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy  # Это лучше, чем просто depends_on
 
   db:
     image: postgres:18
     ports:
-      - "5431:5432"  # 5431 - это внешний порт моего компьюетра на который пробрасывается порт 5432 из контейнера (внутренний)
+      - "5431:5432"
     env_file:
       - .env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql  # ИЗМЕНИТЕ ЭТО! Убрать /data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:
