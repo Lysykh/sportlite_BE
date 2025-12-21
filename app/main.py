@@ -15,7 +15,7 @@ from psycopg2 import sql
 from sqlalchemy import select
 from app.config import settings
 from app.models import ItemCreate, New_user, Workout
-from app import models
+from app import models 
 
 import ssl
 
@@ -73,7 +73,7 @@ async def root():
     return {"message": "Hello World", "test": "some", "test2": test2}  
     
 
-# СВЯЗЬ ТАБЛИЦ
+# СВЯЗЬ 
 @app.post("/users/{user_id}/add-workout/{workout_id}")
 async def add_workout_to_user_handler(
     user_id: int,
