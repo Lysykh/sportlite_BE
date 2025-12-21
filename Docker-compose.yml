@@ -10,7 +10,9 @@ services:
       - .:/app
     depends_on:
       db:
-        condition: service_healthy  # Это лучше, чем просто depends_on
+        condition: service_healthy
+    networks:
+      - app-network
 
   db:
     image: postgres:18
@@ -19,13 +21,19 @@ services:
     env_file:
       - .env
     volumes:
-      - postgres_data:/var/lib/postgresql  # ИЗМЕНИТЕ ЭТО! Убрать /data
+      # Изменяем точку монтирования для PostgreSQL 18+
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U oleg -d comments"]
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
