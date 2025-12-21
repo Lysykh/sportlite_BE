@@ -3,7 +3,6 @@ services:
     build: .
     ports:
       - "811:80"
-    command: "uvicorn app.main:app --host 0.0.0.0 --port 80 --reload"
     env_file:
       - .env
     volumes:
@@ -11,29 +10,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - app-network
 
   db:
-    image: postgres:18
+    image: postgres:16
     ports:
       - "5431:5432"
     env_file:
       - .env
     volumes:
-      # Изменяем точку монтирования для PostgreSQL 18+
-      - postgres_data:/var/lib/postgresql
-    networks:
-      - app-network
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U oleg -d comments"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
   postgres_data:
-
-networks:
-  app-network:
-    driver: bridge 
+EOF
